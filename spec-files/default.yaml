@@ -27,7 +27,7 @@ paths:
           description: The user credentials used to authenticate the client
           required: true
           schema:
-            $ref: "#/definitions/Credentials"
+            $ref: "/definitions/Credentials"
 
       responses:
         200:
@@ -41,7 +41,7 @@ paths:
         default:
           description: Wrong credentials
           schema:
-            $ref: '#/definitions/Error'
+            $ref: '/definitions/Error'
 
   /cases:
     get:
@@ -69,7 +69,7 @@ paths:
           schema:
             type: array
             items:
-              $ref: "#/definitions/Case"
+              $ref: "/definitions/Case"
 
   /cases/{caseId}:
     get:
@@ -86,7 +86,7 @@ paths:
         200:
           description: The details for the queried case
           schema:
-            $ref: "#/definitions/Case"
+            $ref: "/definitions/Case"
 
     put:
       summary: Update some details of a case
@@ -102,13 +102,13 @@ paths:
             'priority' and 'assignments.current'
           in: body
           schema:
-            $ref: '#/definitions/Case'
+            $ref: '/definitions/Case'
 
       responses:
         406:
           description: Request body not acceptable
           schema:
-            $ref: '#/definitions/Error'
+            $ref: '/definitions/Error'
         200:
           description: Case updated
 
@@ -122,7 +122,7 @@ paths:
         - name: commentBody
           in: body
           schema:
-            $ref: '#/definitions/Comment'
+            $ref: '/definitions/Comment'
 
       responses:
         404:
@@ -130,7 +130,7 @@ paths:
         406:
           description: Request body not acceptable
           schema:
-            $ref: '#/definitions/Error'
+            $ref: '/definitions/Error'
         201:
           description: Comment created
           schema:
@@ -164,7 +164,7 @@ paths:
                 type: array
                 description: Parameters to provide to the start point of the CoA
                 items:
-                  $ref: '#/definitions/ParameterValue'
+                  $ref: '/definitions/ParameterValue'
 
       responses:
         404:
@@ -172,7 +172,7 @@ paths:
         406:
           description: Request body not acceptable
           schema:
-            $ref: '#/definitions/Error'
+            $ref: '/definitions/Error'
         201:
           description: Execution started
           schema:
@@ -233,7 +233,7 @@ paths:
         200:
           description: Raw data provided by the task execution
           schema:
-            $ref: '#/definitions/RawData'
+            $ref: '/definitions/RawData'
 
   /coas:
     get:
@@ -250,7 +250,7 @@ paths:
           schema:
             type: array
             items:
-              $ref: '#/definitions/CoA'
+              $ref: '/definitions/CoA'
 
     post:
       summary: Create a new course of action
@@ -259,13 +259,13 @@ paths:
           in: body
           required: true
           schema:
-            $ref: '#/definitions/CoA'
+            $ref: '/definitions/CoA'
 
       responses:
         406:
           description: Request body not acceptable
           schema:
-            $ref: '#/definitions/Error'
+            $ref: '/definitions/Error'
         201:
           description: Course of action created
           schema:
@@ -291,7 +291,7 @@ paths:
         200:
           description: Details of the course of action
           schema:
-            $ref: '#/definitions/CoA'
+            $ref: '/definitions/CoA'
 
     put:
       summary: Update the content of a course of action
@@ -305,7 +305,7 @@ paths:
           in: body
           required: true
           schema:
-            $ref: '#/definitions/CoA'
+            $ref: '/definitions/CoA'
 
       responses:
         404:
@@ -313,7 +313,7 @@ paths:
         406:
           description: Request body not acceptable
           schema:
-            $ref: '#/definitions/Error'
+            $ref: '/definitions/Error'
         201:
           description: Course of action modified
 
@@ -342,13 +342,13 @@ paths:
         - name: commentBody
           in: body
           schema:
-            $ref: '#/definitions/Comment'
+            $ref: '/definitions/Comment'
 
       responses:
         406:
           description: Request body not acceptable
           schema:
-            $ref: '#/definitions/Error'
+            $ref: '/definitions/Error'
         201:
           description: Comment created
           schema:
@@ -385,7 +385,7 @@ paths:
           schema:
             type: array
             items:
-              $ref: "#/definitions/Event"
+              $ref: "/definitions/Event"
 
   /events/{eventId}:
     get:
@@ -406,7 +406,7 @@ paths:
             'outputRawData' nor 'traceData'. To obtain these,
             you'll need to query for them explicitly.
           schema:
-            $ref: "#/definitions/Event"
+            $ref: "/definitions/Event"
 
   /events/{eventId}/comments:
     post:
@@ -418,7 +418,7 @@ paths:
         - name: commentBody
           in: body
           schema:
-            $ref: '#/definitions/Comment'
+            $ref: '/definitions/Comment'
 
       responses:
         404:
@@ -426,7 +426,7 @@ paths:
         406:
           description: Request body not acceptable
           schema:
-            $ref: '#/definitions/Error'
+            $ref: '/definitions/Error'
         201:
           description: Comment created
           schema:
@@ -469,7 +469,7 @@ paths:
         200:
           description: Raw data provided by the task execution
           schema:
-            $ref: '#/definitions/RawData'
+            $ref: '/definitions/RawData'
 
   /events/{eventId}/executions:
     post:
@@ -494,7 +494,7 @@ paths:
                 type: array
                 description: Parameters to provide to the start point of the CoA
                 items:
-                  $ref: '#/definitions/ParameterValue'
+                  $ref: '/definitions/ParameterValue'
 
       responses:
         404:
@@ -502,7 +502,7 @@ paths:
         406:
           description: Request body not acceptable
           schema:
-            $ref: '#/definitions/Error'
+            $ref: '/definitions/Error'
         201:
           description: Execution started
           schema:
@@ -526,7 +526,7 @@ paths:
           schema:
             type: array
             items:
-              $ref: "#/definitions/ParameterType"
+              $ref: "/definitions/ParameterType"
 
   /permissions:
     get:
@@ -537,7 +537,7 @@ paths:
           schema:
             type: array
             items:
-              $ref: "#/definitions/Permission"
+              $ref: "/definitions/Permission"
 
   /plugins:
     get:
@@ -560,7 +560,7 @@ paths:
           schema:
             type: array
             items:
-              $ref: "#/definitions/DevicePlugin"
+              $ref: "/definitions/DevicePlugin"
 
     post:
       summary: Install a new plugin
@@ -607,7 +607,7 @@ paths:
         200:
           description: Plugin details
           schema:
-            $ref: "#/definitions/DevicePlugin"
+            $ref: "/definitions/DevicePlugin"
 
   /plugins/{pluginId}/comments:
     post:
@@ -619,13 +619,13 @@ paths:
         - name: commentBody
           in: body
           schema:
-            $ref: '#/definitions/Comment'
+            $ref: '/definitions/Comment'
 
       responses:
         406:
           description: Request body not acceptable
           schema:
-            $ref: '#/definitions/Error'
+            $ref: '/definitions/Error'
         201:
           description: Comment created
           schema:
@@ -653,7 +653,7 @@ paths:
           schema:
             type: array
             items:
-              $ref: "#/definitions/Parameter"
+              $ref: "/definitions/Parameter"
 
   /plugins/{pluginId}/parameters/{parameterName}:
     put:
@@ -696,7 +696,7 @@ paths:
           schema:
             type: array
             items:
-              $ref: "#/definitions/Command"
+              $ref: "/definitions/Command"
 
     post:
       summary: Create a command alias for a certain plugin
@@ -708,7 +708,7 @@ paths:
         - name: commandBody
           in: body
           schema:
-            $ref: '#/definitions/CommandAlias'
+            $ref: '/definitions/CommandAlias'
 
       responses:
         404:
@@ -716,7 +716,7 @@ paths:
         406:
           description: Request body not acceptable
           schema:
-            $ref: '#/definitions/Error'
+            $ref: '/definitions/Error'
         201:
           description: Command alias created
           schema:
@@ -745,7 +745,7 @@ paths:
         200:
           description: Detail of the command
           schema:
-            $ref: '#/definitions/Command'
+            $ref: '/definitions/Command'
 
     put:
       summary: Update details of a particular command
@@ -761,7 +761,7 @@ paths:
         - name: commandBody
           in: body
           schema:
-            $ref: '#/definitions/Command'
+            $ref: '/definitions/Command'
 
       responses:
         404:
@@ -769,7 +769,7 @@ paths:
         406:
           description: Request not acceptable
           schema:
-            $ref: '#/definitions/Error'
+            $ref: '/definitions/Error'
         200:
           description: Updates were applied
 
@@ -819,7 +819,7 @@ paths:
           schema:
             type: array
             items:
-              $ref: '#/definitions/Device'
+              $ref: '/definitions/Device'
 
     post:
       summary: Create a new device for this plugin
@@ -831,7 +831,7 @@ paths:
         - name: deviceBody
           in: body
           schema:
-            $ref: '#/definitions/Device'
+            $ref: '/definitions/Device'
 
       responses:
         404:
@@ -839,7 +839,7 @@ paths:
         406:
           description: Request not acceptable
           schema:
-            $ref: '#/definitions/Error'
+            $ref: '/definitions/Error'
 
   /plugins/{pluginId}/devices/{deviceId}:
     get:
@@ -860,7 +860,7 @@ paths:
         200:
           description: Device details
           schema:
-            $ref: '#/definitions/Device'
+            $ref: '/definitions/Device'
 
     put:
       summary: Update the details of a certain device
@@ -876,7 +876,7 @@ paths:
         - name: newDeviceBody
           in: body
           schema:
-            $ref: '#/definitions/Device'
+            $ref: '/definitions/Device'
 
       responses:
         404:
@@ -916,13 +916,13 @@ paths:
         - name: commentBody
           in: body
           schema:
-            $ref: '#/definitions/Comment'
+            $ref: '/definitions/Comment'
 
       responses:
         406:
           description: Request body not acceptable
           schema:
-            $ref: '#/definitions/Error'
+            $ref: '/definitions/Error'
         201:
           description: Comment created
           schema:
@@ -954,7 +954,7 @@ paths:
           schema:
             type: array
             items:
-              $ref: "#/definitions/Parameter"
+              $ref: "/definitions/Parameter"
 
     post:
       summary: Create a new parameter on this device
@@ -970,7 +970,7 @@ paths:
         - name: parameterBody
           in: body
           schema:
-            $ref: '#/definitions/Parameter'
+            $ref: '/definitions/Parameter'
 
       responses:
         404:
@@ -978,7 +978,7 @@ paths:
         406:
           description: Request body not acceptable
           schema:
-            $ref: '#/definitions/Error'
+            $ref: '/definitions/Error'
         201:
           description: Parameter was created
 
@@ -1053,7 +1053,7 @@ paths:
           schema:
             type: array
             items:
-              $ref: "#/definitions/Command"
+              $ref: "/definitions/Command"
 
     post:
       summary: Create a command alias for a certain plugin
@@ -1069,7 +1069,7 @@ paths:
         - name: commandBody
           in: body
           schema:
-            $ref: '#/definitions/CommandAlias'
+            $ref: '/definitions/CommandAlias'
 
       responses:
         404:
@@ -1077,7 +1077,7 @@ paths:
         406:
           description: Request body not acceptable
           schema:
-            $ref: '#/definitions/Error'
+            $ref: '/definitions/Error'
         201:
           description: Command alias created
           schema:
@@ -1110,7 +1110,7 @@ paths:
         200:
           description: Detail of the command
           schema:
-            $ref: '#/definitions/Command'
+            $ref: '/definitions/Command'
 
     put:
       summary: Update details of a particular command
@@ -1130,7 +1130,7 @@ paths:
         - name: commandBody
           in: body
           schema:
-            $ref: '#/definitions/Command'
+            $ref: '/definitions/Command'
 
       responses:
         404:
@@ -1138,7 +1138,7 @@ paths:
         406:
           description: Request not acceptable
           schema:
-            $ref: '#/definitions/Error'
+            $ref: '/definitions/Error'
         200:
           description: Updates were applied
 
@@ -1172,7 +1172,7 @@ paths:
         200:
           description: The list of script plugins
           schema:
-            $ref: '#/definitions/ScriptPlugin'
+            $ref: '/definitions/ScriptPlugin'
 
     post:
       summary: Create a new script plugin
@@ -1181,7 +1181,7 @@ paths:
           in: body
           required: true
           schema:
-            $ref: '#/definitions/ScriptPlugin'
+            $ref: '/definitions/ScriptPlugin'
         - name: script
           in: formData
           type: file
@@ -1193,7 +1193,7 @@ paths:
         406:
           description: Request content not acceptable
           schema:
-            $ref: '#/definitions/Error'
+            $ref: '/definitions/Error'
         201:
           description: Script plugin created
           schema:
@@ -1229,7 +1229,7 @@ paths:
           schema:
             type: array
             items:
-              $ref: "#/definitions/User"
+              $ref: "/definitions/User"
 
     post:
       summary: Create a new user
@@ -1237,13 +1237,13 @@ paths:
         - name: userBody
           in: body
           schema:
-            $ref: '#/definitions/User'
+            $ref: '/definitions/User'
 
       responses:
         406:
           description: Request body not acceptable
           schema:
-            $ref: '#/definitions/Error'
+            $ref: '/definitions/Error'
         201:
           description: User created
           schema:
@@ -1269,7 +1269,7 @@ paths:
         200:
           description: The user details
           schema:
-            $ref: "#/definitions/User"
+            $ref: "/definitions/User"
 
     put:
       summary: Update the details of a user
@@ -1281,7 +1281,7 @@ paths:
         - name: userBody
           in: body
           schema:
-            $ref: '#/definitions/User'
+            $ref: '/definitions/User'
 
       responses:
         404:
@@ -1289,7 +1289,7 @@ paths:
         406:
           description: Request body not acceptable
           schema:
-            $ref: '#/definitions/Error'
+            $ref: '/definitions/Error'
         200:
           description: The user was modified
 
@@ -1316,7 +1316,7 @@ paths:
           schema:
             type: array
             items:
-              $ref: "#/definitions/UserGroup"
+              $ref: "/definitions/UserGroup"
 
     post:
       summary: Create a new user group
@@ -1324,13 +1324,13 @@ paths:
         - name: groupBody
           in: body
           schema:
-            $ref: '#/definitions/UserGroup'
+            $ref: '/definitions/UserGroup'
 
       responses:
         406:
           description: Request body not acceptable
           schema:
-            $ref: '#/definitions/Error'
+            $ref: '/definitions/Error'
         201:
           description: User group created
           schema:
@@ -1356,7 +1356,7 @@ paths:
         200:
           description: The user group details
           schema:
-            $ref: "#/definitions/UserGroup"
+            $ref: "/definitions/UserGroup"
 
     put:
       summary: Update the details of a user group
@@ -1368,7 +1368,7 @@ paths:
         - name: groupBody
           in: body
           schema:
-            $ref: '#/definitions/UserGroup'
+            $ref: '/definitions/UserGroup'
 
       responses:
         404:
@@ -1376,7 +1376,7 @@ paths:
         406:
           description: Request body not acceptable
           schema:
-            $ref: '#/definitions/Error'
+            $ref: '/definitions/Error'
         200:
           description: The user group was modified
 
@@ -1441,13 +1441,13 @@ definitions:
 
       event:
         description: The event from which this case is derived
-        $ref: '#/definitions/Event'
+        $ref: '/definitions/Event'
 
       comments:
         type: array
         description: A set of comments for this case
         items:
-          $ref: '#/definitions/Comment'
+          $ref: '/definitions/Comment'
 
       status:
         type: string
@@ -1479,7 +1479,7 @@ definitions:
             value:
               description: Value to display
 
-      additionalInfos: # Case.FilterTags
+      additionalInfos:  Case.FilterTags
         type: object
         properties:
           incidentName:
@@ -1497,12 +1497,12 @@ definitions:
         type: object
         properties:
           initial:
-            $ref: '#/definitions/Assignment'
+            $ref: '/definitions/Assignment'
           current:
-            $ref: '#/definitions/Assignment'
+            $ref: '/definitions/Assignment'
 
       workflowModel:
-        $ref: '#/definitions/WorkflowModel'
+        $ref: '/definitions/WorkflowModel'
 
       executionHistory:
         type: array
@@ -1523,7 +1523,7 @@ definitions:
             taskResults:
               type: array
               items:
-                $ref: '#/definitions/TaskResult'
+                $ref: '/definitions/TaskResult'
 
             startTime:
               type: string
@@ -1551,7 +1551,7 @@ definitions:
                 - Error
 
       auditInfo:
-        $ref: "#/definitions/AuditInfo"
+        $ref: "/definitions/AuditInfo"
 
   CoA:
     properties:
@@ -1582,7 +1582,7 @@ definitions:
       inputParameters:
         type: array
         items:
-          $ref: '#/definitions/Parameter'
+          $ref: '/definitions/Parameter'
 
       summaryList:
         type: array
@@ -1598,7 +1598,7 @@ definitions:
         type: array
         description: A set of comments for this case
         items:
-          $ref: '#/definitions/Comment'
+          $ref: '/definitions/Comment'
 
       status:
         type: string
@@ -1608,10 +1608,10 @@ definitions:
         - Deleted
 
       workflowModel:
-        $ref: '#/definitions/WorkflowModel'
+        $ref: '/definitions/WorkflowModel'
 
       auditInfo:
-        $ref: '#/definitions/AuditInfo'
+        $ref: '/definitions/AuditInfo'
 
   CommandAlias:
     description: "Explicit command alias, only used when creating an alias"
@@ -1648,11 +1648,11 @@ definitions:
       outputParameters:
         type: array
         items:
-          $ref: '#/definitions/OutputParameter'
+          $ref: '/definitions/OutputParameter'
       inputParameters:
         type: array
         items:
-          $ref: '#/definitions/Parameter'
+          $ref: '/definitions/Parameter'
       summaryNames:
         type: array
         items:
@@ -1667,7 +1667,7 @@ definitions:
   Comment:
     properties:
       auditInfo:
-        $ref: '#/definitions/AuditInfo'
+        $ref: '/definitions/AuditInfo'
       comment:
         type: string
         description: The comment message
@@ -1703,20 +1703,20 @@ definitions:
           - Disabled
           - Deleted
       auditInfo:
-        $ref: "#/definitions/AuditInfo"
+        $ref: "/definitions/AuditInfo"
       commands:
         type: array
         items:
-          $ref: "#/definitions/Command"
+          $ref: "/definitions/Command"
       parameters:
         type: array
         items:
-          $ref: "#/definitions/Parameter"
+          $ref: "/definitions/Parameter"
       comments:
         type: array
         description: A set of comments for this case
         items:
-          $ref: '#/definitions/Comment'
+          $ref: '/definitions/Comment'
 
   DevicePlugin:
     required:
@@ -1752,20 +1752,20 @@ definitions:
         description: The path to the icon resource (if it exists)
 
       auditInfo:
-        $ref: "#/definitions/AuditInfo"
+        $ref: "/definitions/AuditInfo"
       commands:
         type: array
         items:
-          $ref: "#/definitions/Command"
+          $ref: "/definitions/Command"
       parameters:
         type: array
         items:
-          $ref: "#/definitions/Parameter"
+          $ref: "/definitions/Parameter"
       comments:
         type: array
         description: A set of comments for this case
         items:
-          $ref: '#/definitions/Comment'
+          $ref: '/definitions/Comment'
 
   Error:
     properties:
@@ -1792,20 +1792,20 @@ definitions:
         description: Name of the adapter that produced this event
 
       error:
-        $ref: '#/definitions/Error'
+        $ref: '/definitions/Error'
 
       inputParameters:
         type: array
         items:
-          $ref: '#/definitions/ParameterValue'
+          $ref: '/definitions/ParameterValue'
 
       outputParameters:
         type: array
         items:
-          $ref: '#/definitions/ParameterValue'
+          $ref: '/definitions/ParameterValue'
 
       outputRawData:
-        $ref: '#/definitions/RawData'
+        $ref: '/definitions/RawData'
 
       traceData:
         type: string
@@ -1818,13 +1818,13 @@ definitions:
           description: Name (or path) reference of pieces of data to include in summary
 
       auditInfo:
-        $ref: '#/definitions/AuditInfo'
+        $ref: '/definitions/AuditInfo'
 
       comments:
         type: array
         description: A set of comments for this case
         items:
-          $ref: '#/definitions/Comment'
+          $ref: '/definitions/Comment'
 
   OutputParameter:
     properties:
@@ -1892,10 +1892,10 @@ definitions:
         type: array
         description: Fields in a complex parameter (if valueType is "complex")
         items:
-          $ref: "#/definitions/Parameter"
+          $ref: "/definitions/Parameter"
 
       auditInfo:
-        $ref: "#/definitions/AuditInfo"
+        $ref: "/definitions/AuditInfo"
 
   ParameterValue:
     properties:
@@ -1927,7 +1927,7 @@ definitions:
   RawData:
     properties:
       auditInfo:
-        $ref: '#/definitions/AuditInfo'
+        $ref: '/definitions/AuditInfo'
 
       mimeType:
         type: string
@@ -1967,9 +1967,9 @@ definitions:
         type: string
         description: The path to the icon resource (if it exists)
       auditInfo:
-        $ref: "#/definitions/AuditInfo"
+        $ref: "/definitions/AuditInfo"
       commands:
-        $ref: "#/definitions/Command"
+        $ref: "/definitions/Command"
 
   TaskResult:
     properties:
@@ -1998,26 +1998,42 @@ definitions:
         format: date-time
         description: Date/time when this task finished executing
 
-      inputParameters:
-        type: array
-        description: Set of input parameters
-        items:
-          $ref: '#/definitions/ParameterValue'
+      input:
+        type: object
+        properties:
+          parameters:
+            type: array
+            description: Set of input parameters
+            items:
+              $ref: '/definitions/ParameterValue'
 
-      outputParameters:
-        type: array
-        description: Set of output parameters
-        items:
-          $ref: '#/definitions/ParameterValue'
+      output:
+        type: object
+        properties:
+          summaryParameterNames:
+            type: array
+            description: The modifications to apply to the set of parameter names used for summary
+            items:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: The name of the parameter to either remove or add to the list
+                operation:
+                  type: string
+                  description: Remove or add the specified parameter name from the list
+                  enum:
+                    - add
+                    - del
 
-      summaryNames:
-        type: array
-        items:
-          type: string
-          description: Name (or path) reference of pieces of data to include in summary
+          parameters:
+            type: array
+            description: Set of output parameters
+            items:
+              $ref: '/definitions/ParameterValue'
 
       auditInfo:
-        $ref: '#/definitions/AuditInfo'
+        $ref: '/definitions/AuditInfo'
 
   User:
     properties:
@@ -2058,7 +2074,7 @@ definitions:
           type: string
           format: uuid
       auditInfo:
-        $ref: "#/definitions/AuditInfo"
+        $ref: "/definitions/AuditInfo"
 
   UserGroup:
     properties:
@@ -2073,7 +2089,7 @@ definitions:
         type: string
         description: A more verbose description of the data type
       auditInfo:
-        $ref: "#/definitions/AuditInfo"
+        $ref: "/definitions/AuditInfo"
       permissions:
         type: array
         items:
@@ -2116,7 +2132,7 @@ definitions:
         items:
           type: object
 
-      commandTasks:
+      deviceTasks:
         type: array
         items:
           type: object
