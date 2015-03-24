@@ -69,7 +69,7 @@ module.exports = function (grunt) {
 
   grunt.registerTask('ship', [
     'build',
-    'gh-pages',
-    'shell:publish'
+    'gh-pages'
+    // 'shell:publish'
   ]);
 };

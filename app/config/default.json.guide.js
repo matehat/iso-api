@@ -58,13 +58,7 @@ var defaults = {
    * example is a combination of `examplesFolder` and file name
   */
   exampleFiles: [
-    'default.yaml',
-    'heroku-pets.yaml',
-    'minimal.yaml',
-    'petstore_simple.yaml',
-    'petstore_full.yaml',
-    'basic-auth.yaml',
-    'security.yaml'
+    'iso.yml'
   ],
 
   /*
