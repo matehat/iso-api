@@ -1,265 +1,1772 @@
-# this is an example of the Uber API
-# as a demonstration of an API spec in YAML
+
 swagger: '2.0'
 info:
-  title: Uber API
-  description: Move your app forward with the Uber API
+  title: ISO Service API
+  description: ISO RESTful API service specification
   version: "1.0.0"
-# the domain of the service
-host: api.uber.com
-# array of all schemes that your API supports
+
 schemes:
   - https
-# will be prefixed to all paths
-basePath: /v1
+
+basePath: /
+
 produces:
   - application/json
+
 paths:
-  /products:
-    get:
-      summary: Product Types
+
+  /auth:
+    post:
+      summary: Authentication
       description: |
-        The Products endpoint returns information about the *Uber* products
-        offered at a given location. The response includes the display name
-        and other details about each product, and lists the products in the
-        proper display order.
+        Obtain a token that can later be used to perform application requests
+
       parameters:
-        - name: latitude
-          in: query
-          description: Latitude component of location.
+        - name: credentials
+          in: body
+          description: The user credentials used to authenticate the client
           required: true
-          type: number
-          format: double
-        - name: longitude
-          in: query
-          description: Longitude component of location.
-          required: true
-          type: number
-          format: double
-      tags:
-        - Products
+          schema:
+            $ref: "/definitions/Credentials"
+
       responses:
         200:
-          description: An array of products
+          description: A Javascript Web Token
+          schema:
+            type: object
+            properties:
+              token:
+                type: string
+
+        default:
+          description: Wrong credentials
+          schema:
+            $ref: '/definitions/Error'
+
+  /cases:
+    get:
+      summary: "Obtain a subset of all cases within a range"
+      parameters:
+        - name: from_dt
+          type: number
+          in: query
+          format: int64
+          description: UNIX timestamp for the earliest case to be returned
+        - name: count
+          type: number
+          in: query
+          format: int32
+          description: |
+            Count of cases to return from the query
+            This is indicative, the server may return more or less items than that.
+
+      responses:
+        200:
+          description: |
+            A list of Case (summary) objects. These objects will not include neither
+            'workflowModel', 'comments', nor 'executionHistory' properties. To obtain these,
+            you'll need to query the case individually.
           schema:
             type: array
             items:
-              $ref: '#/definitions/Product'
-        default:
-          description: Unexpected error
-          schema:
-            $ref: '#/definitions/Error'
-  /estimates/price:
+              $ref: "/definitions/Case"
+
+  /cases/{caseId}:
     get:
-      summary: Price Estimates
-      description: |
-        The Price Estimates endpoint returns an estimated price range
-        for each product offered at a given location. The price estimate is
-        provided as a formatted string with the full price range and the localized
-        currency symbol.<br><br>The response also includes low and high estimates,
-        and the [ISO 4217](http://en.wikipedia.org/wiki/ISO_4217) currency code for
-        situations requiring currency conversion. When surge is active for a particular
-        product, its surge_multiplier will be greater than 1, but the price estimate
-        already factors in this multiplier.
+      summary: Obtain the details of a case
       parameters:
-        - name: start_latitude
-          in: query
-          description: Latitude component of start location.
-          required: true
-          type: number
-          format: double
-        - name: start_longitude
-          in: query
-          description: Longitude component of start location.
-          required: true
-          type: number
-          format: double
-        - name: end_latitude
-          in: query
-          description: Latitude component of end location.
-          required: true
-          type: number
-          format: double
-        - name: end_longitude
-          in: query
-          description: Longitude component of end location.
-          required: true
-          type: number
-          format: double
-      tags:
-        - Estimates
-      responses:
-        200:
-          description: An array of price estimates by product
-          schema:
-            type: array
-            items:
-              $ref: '#/definitions/PriceEstimate'
-        default:
-          description: Unexpected error
-          schema:
-            $ref: '#/definitions/Error'
-  /estimates/time:
-    get:
-      summary: Time Estimates
-      description: The Time Estimates endpoint returns ETAs for all products offered at a given location, with the responses expressed as integers in seconds. We recommend that this endpoint be called every minute to provide the most accurate, up-to-date ETAs.
-      parameters:
-        - name: start_latitude
-          in: query
-          description: Latitude component of start location.
-          required: true
-          type: number
-          format: double
-        - name: start_longitude
-          in: query
-          description: Longitude component of start location.
-          required: true
-          type: number
-          format: double
-        - name: customer_uuid
-          in: query
+        - name: caseId
+          in: path
           type: string
           format: uuid
-          description: Unique customer identifier to be used for experience customization.
-        - name: product_id
-          in: query
+
+      responses:
+        404:
+          description: Resource not found
+        200:
+          description: The details for the queried case
+          schema:
+            $ref: "/definitions/Case"
+
+    put:
+      summary: Update some details of a case
+      parameters:
+        - name: caseId
+          in: path
           type: string
-          description: Unique identifier representing a specific product for a given latitude & longitude.
-      tags:
-        - Estimates
+          format: uuid
+        - name: partialCaseBody
+          description: |
+            An object containing parts of the case to update.
+            The only values allowed to be updated are 'name',
+            'priority' and 'assignments.current'
+          in: body
+          schema:
+            $ref: '/definitions/Case'
+
+      responses:
+        406:
+          description: Request body not acceptable
+          schema:
+            $ref: '/definitions/Error'
+        200:
+          description: Case updated
+
+  /cases/{caseId}/comments:
+    post:
+      parameters:
+        - name: caseId
+          in: path
+          type: string
+          format: uuid
+        - name: commentBody
+          in: body
+          schema:
+            $ref: '/definitions/Comment'
+
+      responses:
+        404:
+          description: Case object can't be found
+        406:
+          description: Request body not acceptable
+          schema:
+            $ref: '/definitions/Error'
+        201:
+          description: Comment created
+          schema:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+                description: Identifier of the new comment
+
+  /cases/{caseId}/executions:
+    post:
+      parameters:
+        - name: caseId
+          in: path
+          type: string
+          format: uuid
+          description: Case identifier
+        - name: invocationBody
+          in: body
+          description: Data required for the new course of action to run for this case
+          schema:
+            type: object
+            properties:
+              coaId:
+                type: string
+                format: uuid
+                description: Identifier of the course of action to run
+
+              inputParameters:
+                type: array
+                description: Parameters to provide to the start point of the CoA
+                items:
+                  $ref: '/definitions/ParameterValue'
+
+      responses:
+        404:
+          description: Case object can't be found
+        406:
+          description: Request body not acceptable
+          schema:
+            $ref: '/definitions/Error'
+        201:
+          description: Execution started
+          schema:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+                description: Identifier of the new execution
+
+  /cases/{caseId}/executions/{executionId}/tasks/{taskId}/trace_data:
+    get:
+      parameters:
+        - name: caseId
+          in: path
+          type: string
+          format: uuid
+          description: Case identifier
+        - name: executionId
+          in: path
+          type: string
+          format: uuid
+          description: Execution identifier
+        - name: taskId
+          in: path
+          type: string
+          description: Task identifier
+
+      responses:
+        404:
+          description: The task can't be found
+        200:
+          description: Tracing information provided by the plugin
+          schema:
+            type: string
+
+  /cases/{caseId}/executions/{executionId}/tasks/{taskId}/raw_data:
+    get:
+      parameters:
+        - name: caseId
+          in: path
+          type: string
+          format: uuid
+          description: Case identifier
+        - name: executionId
+          in: path
+          type: string
+          format: uuid
+          description: Execution identifier
+        - name: taskId
+          in: path
+          type: string
+          description: Task identifier
+
+      responses:
+        404:
+          description: The task can't be found
+        200:
+          description: Raw data provided by the task execution
+          schema:
+            $ref: '/definitions/RawData'
+
+  /coas:
+    get:
+      summary: Get a list of available CoAs (possibly filtered)
+      parameters:
+        - name: parameter_type
+          type: string
+          in: query
+          required: false
+
       responses:
         200:
-          description: An array of products
+          description: The list of matching courses of action (without 'comments' nor 'workflowModel')
           schema:
             type: array
             items:
-              $ref: '#/definitions/Product'
-        default:
-          description: Unexpected error
-          schema:
-            $ref: '#/definitions/Error'
-  /me:
-    get:
-      summary: User Profile
-      description: The User Profile endpoint returns information about the Uber user that has authorized with the application.
-      tags:
-        - User
-      responses:
-        200:
-          description: Profile information for a user
-          schema:
-            $ref: '#/definitions/Profile'
-        default:
-          description: Unexpected error
-          schema:
-            $ref: '#/definitions/Error'
-  /history:
-    get:
-      summary: User Activity
-      description: The User Activity endpoint returns data about a user's lifetime activity with Uber. The response will include pickup locations and times, dropoff locations and times, the distance of past requests, and information about which products were requested.<br><br>The history array in the response will have a maximum length based on the limit parameter. The response value count may exceed limit, therefore subsequent API requests may be necessary.
+              $ref: '/definitions/CoA'
+
+    post:
+      summary: Create a new course of action
       parameters:
-        - name: offset
+        - name: coaBody
+          in: body
+          required: true
+          schema:
+            $ref: '/definitions/CoA'
+
+      responses:
+        406:
+          description: Request body not acceptable
+          schema:
+            $ref: '/definitions/Error'
+        201:
+          description: Course of action created
+          schema:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+                description: Identifier of the new coa
+
+  /coas/{coaId}:
+    get:
+      summary: Get all the details of a course of action (including 'comments' and 'workflowModel')
+      parameters:
+        - name: coaId
+          type: string
+          in: path
+          required: true
+
+      responses:
+        404:
+          description: Course of action not found
+        200:
+          description: Details of the course of action
+          schema:
+            $ref: '/definitions/CoA'
+
+    put:
+      summary: Update the content of a course of action
+      parameters:
+        - name: coaId
+          in: path
+          required: true
+          type: string
+          format: uuid
+        - name: coaBody
+          in: body
+          required: true
+          schema:
+            $ref: '/definitions/CoA'
+
+      responses:
+        404:
+          description: Course of action not found
+        406:
+          description: Request body not acceptable
+          schema:
+            $ref: '/definitions/Error'
+        201:
+          description: Course of action modified
+
+    delete:
+      summary: Delete a course of action
+      parameters:
+        - name: coaId
+          in: path
+          required: true
+          type: string
+          format: uuid
+
+      responses:
+        404:
+          description: Course of action not found
+        200:
+          description: Course of action deleted
+
+  /coas/{coaId}/comments:
+    post:
+      parameters:
+        - name: coaId
+          in: path
+          type: string
+          format: uuid
+        - name: commentBody
+          in: body
+          schema:
+            $ref: '/definitions/Comment'
+
+      responses:
+        406:
+          description: Request body not acceptable
+          schema:
+            $ref: '/definitions/Error'
+        201:
+          description: Comment created
+          schema:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+                description: Identifier of the new comment
+
+  /events:
+    get:
+      summary: "Obtain a subset of all cases within a range"
+      parameters:
+        - name: from_dt
+          type: number
           in: query
-          type: integer
-          format: int32
-          description: Offset the list of returned results by this amount. Default is zero.
-        - name: limit
+          format: int64
+          description: UNIX timestamp for the earliest case to be returned
+        - name: count
+          type: number
           in: query
-          type: integer
           format: int32
-          description: Number of items to retrieve. Default is 5, maximum is 100.
-      tags:
-        - User
+          description: |
+            Count of cases to return from the query
+            This is indicative, the server may return more or less items than that.
+
       responses:
         200:
-          description: History information for the given user
+          description: |
+            A list of Event objects. These objects will not include neither
+            'outputRawData', 'comments', nor 'traceData'. To obtain these,
+            you'll need to query for them explicitly.
           schema:
-            $ref: '#/definitions/Activities'
-        default:
-          description: Unexpected error
+            type: array
+            items:
+              $ref: "/definitions/Event"
+
+  /events/{eventId}:
+    get:
+      summary: "Obtain an event's details"
+      parameters:
+        - name: eventId
+          type: string
+          in: path
+          format: uuid
+          description: The Event identifier
+
+      responses:
+        404:
+          description: The event can't be found
+        200:
+          description: |
+            An Event object with comments. This object will not include neither
+            'outputRawData' nor 'traceData'. To obtain these,
+            you'll need to query for them explicitly.
           schema:
-            $ref: '#/definitions/Error'
+            $ref: "/definitions/Event"
+
+  /events/{eventId}/comments:
+    post:
+      parameters:
+        - name: eventId
+          in: path
+          type: string
+          format: uuid
+        - name: commentBody
+          in: body
+          schema:
+            $ref: '/definitions/Comment'
+
+      responses:
+        404:
+          description: The event can't be found
+        406:
+          description: Request body not acceptable
+          schema:
+            $ref: '/definitions/Error'
+        201:
+          description: Comment created
+          schema:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+                description: Identifier of the new comment
+
+  /events/{eventId}/trace_data:
+    get:
+      parameters:
+        - name: eventId
+          in: path
+          type: string
+          format: uuid
+          description: Case identifier
+
+      responses:
+        404:
+          description: The event can't be found
+        200:
+          description: Tracing information provided by the plugin
+          schema:
+            type: string
+
+  /events/{eventId}/raw_data:
+    get:
+      parameters:
+        - name: eventId
+          in: path
+          type: string
+          format: uuid
+          description: Case identifier
+
+      responses:
+        404:
+          description: The event can't be found
+        200:
+          description: Raw data provided by the task execution
+          schema:
+            $ref: '/definitions/RawData'
+
+  /events/{eventId}/executions:
+    post:
+      parameters:
+        - name: eventId
+          in: path
+          type: string
+          format: uuid
+          description: Case identifier
+        - name: invocationBody
+          in: body
+          description: Data required for the new course of action to run for this case
+          schema:
+            type: object
+            properties:
+              coaId:
+                type: string
+                format: uuid
+                description: Identifier of the course of action to run
+
+              inputParameters:
+                type: array
+                description: Parameters to provide to the start point of the CoA
+                items:
+                  $ref: '/definitions/ParameterValue'
+
+      responses:
+        404:
+          description: Event object can't be found
+        406:
+          description: Request body not acceptable
+          schema:
+            $ref: '/definitions/Error'
+        201:
+          description: Execution started
+          schema:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+                description: Identifier of the new execution
+              caseId:
+                type: string
+                format: uuid
+                description: Identifier of the case that was created for executing the CoA
+
+  /parameter_types:
+    get:
+      summary: Get a list of available parameter types
+      responses:
+        200:
+          description: The list of parameter types
+          schema:
+            type: array
+            items:
+              $ref: "/definitions/ParameterType"
+
+  /permissions:
+    get:
+      summary: Get a list of permissions
+      responses:
+        200:
+          description: The list of permissions
+          schema:
+            type: array
+            items:
+              $ref: "/definitions/Permission"
+
+  /plugins:
+    get:
+      summary: Get a list of all plugins
+      parameters:
+        - name: include
+          in: query
+          description: Sub-objects to include in the result set
+          type: array
+          collectionFormat: csv
+          items:
+            type: string
+            enum:
+            - commands
+            - parameters
+
+      responses:
+        200:
+          description: The list of DevicePlugin objects available
+          schema:
+            type: array
+            items:
+              $ref: "/definitions/DevicePlugin"
+
+    post:
+      summary: Install a new plugin
+      parameters:
+        - name: package
+          in: formData
+          type: file
+      consumes:
+        - multipart/form-data
+      responses:
+        406:
+          description: Request not acceptable
+        200:
+          description: Plugin was installed
+          schema:
+            type: object
+            properties:
+              id:
+                type: string
+                description: ID of the new installed plugin
+
+  /plugins/{pluginId}:
+    get:
+      summary: Get the details of a certain plugin
+      parameters:
+        - name: pluginId
+          in: path
+          type: string
+          format: uuid
+        - name: include
+          in: query
+          description: Sub-objects to include in the result set
+          type: array
+          collectionFormat: csv
+          items:
+            type: string
+            enum:
+            - commands
+            - parameters
+
+      responses:
+        404:
+          description: Resource not found
+        200:
+          description: Plugin details
+          schema:
+            $ref: "/definitions/DevicePlugin"
+
+  /plugins/{pluginId}/comments:
+    post:
+      parameters:
+        - name: pluginId
+          in: path
+          type: string
+          format: uuid
+        - name: commentBody
+          in: body
+          schema:
+            $ref: '/definitions/Comment'
+
+      responses:
+        406:
+          description: Request body not acceptable
+          schema:
+            $ref: '/definitions/Error'
+        201:
+          description: Comment created
+          schema:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+                description: Identifier of the new comment
+
+  /plugins/{pluginId}/parameters:
+    get:
+      summary: Get the list of parameters this device plugin provides
+      parameters:
+        - name: pluginId
+          in: path
+          type: string
+          format: uuid
+
+      responses:
+        404:
+          description: Resource not found
+        200:
+          description: List of plugin parameters
+          schema:
+            type: array
+            items:
+              $ref: "/definitions/Parameter"
+
+  /plugins/{pluginId}/parameters/{parameterName}:
+    put:
+      summary: Change the default value associated with a plugin parameter
+      parameters:
+        - name: pluginId
+          in: path
+          type: string
+          format: uuid
+        - name: parameterName
+          in: path
+          type: string
+        - name: value
+          in: body
+          schema:
+            type: object
+            properties:
+              defaultValue:
+                description: New value for the parameter
+      responses:
+        404:
+          description: Resource not found
+        200:
+          description: Update was performed
+
+  /plugins/{pluginId}/commands:
+    get:
+      summary: Get the list of commands this device plugin provides
+      parameters:
+        - name: pluginId
+          in: path
+          type: string
+          format: uuid
+
+      responses:
+        404:
+          description: Resource not found
+        200:
+          description: List of plugin commands
+          schema:
+            type: array
+            items:
+              $ref: "/definitions/Command"
+
+    post:
+      summary: Create a command alias for a certain plugin
+      parameters:
+        - name: pluginId
+          in: path
+          type: string
+          format: uuid
+        - name: commandBody
+          in: body
+          schema:
+            $ref: '/definitions/CommandAlias'
+
+      responses:
+        404:
+          description: Resource not found
+        406:
+          description: Request body not acceptable
+          schema:
+            $ref: '/definitions/Error'
+        201:
+          description: Command alias created
+          schema:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+                description: Identifier of the new command
+
+  /plugins/{pluginId}/commands/{commandId}:
+    get:
+      summary: Get the details of a particular command
+      parameters:
+        - name: pluginId
+          in: path
+          type: string
+          format: uuid
+        - name: commandId
+          in: path
+          type: string
+          format: uuid
+      responses:
+        404:
+          description: Resource not found
+        200:
+          description: Detail of the command
+          schema:
+            $ref: '/definitions/Command'
+
+    put:
+      summary: Update details of a particular command
+      parameters:
+        - name: pluginId
+          in: path
+          type: string
+          format: uuid
+        - name: commandId
+          in: path
+          type: string
+          format: uuid
+        - name: commandBody
+          in: body
+          schema:
+            $ref: '/definitions/Command'
+
+      responses:
+        404:
+          description: Resource not found
+        406:
+          description: Request not acceptable
+          schema:
+            $ref: '/definitions/Error'
+        200:
+          description: Updates were applied
+
+    delete:
+      summary: Delete a certain command (alias)
+      parameters:
+        - name: pluginId
+          in: path
+          type: string
+          format: uuid
+        - name: commandId
+          in: path
+          type: string
+          format: uuid
+
+      responses:
+        404:
+          description: Resource not found
+        403:
+          description: |
+            Resource cannot be deleted (usually because it's not an alias)
+
+  /plugins/{pluginId}/devices:
+    get:
+      summary: Get a list of devices for a given plugin
+      parameters:
+        - name: pluginId
+          in: path
+          type: string
+          format: uuid
+        - name: include
+          in: query
+          description: Sub-objects to include in the result set
+          type: array
+          collectionFormat: csv
+          items:
+            type: string
+            enum:
+            - commands
+            - parameters
+
+      responses:
+        404:
+          description: Resource not found
+        200:
+          description: List of device objects
+          schema:
+            type: array
+            items:
+              $ref: '/definitions/Device'
+
+    post:
+      summary: Create a new device for this plugin
+      parameters:
+        - name: pluginId
+          in: path
+          type: string
+          format: uuid
+        - name: deviceBody
+          in: body
+          schema:
+            $ref: '/definitions/Device'
+
+      responses:
+        404:
+          description: Resource not found
+        406:
+          description: Request not acceptable
+          schema:
+            $ref: '/definitions/Error'
+
+  /plugins/{pluginId}/devices/{deviceId}:
+    get:
+      summary: Get the details of a certain device
+      parameters:
+        - name: pluginId
+          in: path
+          type: string
+          format: uuid
+        - name: deviceId
+          in: path
+          type: string
+          format: uuid
+
+      responses:
+        404:
+          description: Resource not found
+        200:
+          description: Device details
+          schema:
+            $ref: '/definitions/Device'
+
+    put:
+      summary: Update the details of a certain device
+      parameters:
+        - name: pluginId
+          in: path
+          type: string
+          format: uuid
+        - name: deviceId
+          in: path
+          type: string
+          format: uuid
+        - name: newDeviceBody
+          in: body
+          schema:
+            $ref: '/definitions/Device'
+
+      responses:
+        404:
+          description: Resource not found
+        200:
+          description: Device updated
+
+    delete:
+      summary: Delete a plugin device
+      parameters:
+        - name: pluginId
+          in: path
+          type: string
+          format: uuid
+        - name: deviceId
+          in: path
+          type: string
+          format: uuid
+
+      responses:
+        404:
+          description: Resource not found
+        200:
+          description: Device was deleted
+
+  /plugins/{pluginId}/devices/{deviceId}/comments:
+    post:
+      parameters:
+        - name: pluginId
+          in: path
+          type: string
+          format: uuid
+        - name: deviceId
+          in: path
+          type: string
+          format: uuid
+        - name: commentBody
+          in: body
+          schema:
+            $ref: '/definitions/Comment'
+
+      responses:
+        406:
+          description: Request body not acceptable
+          schema:
+            $ref: '/definitions/Error'
+        201:
+          description: Comment created
+          schema:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+                description: Identifier of the new comment
+
+  /plugins/{pluginId}/devices/{deviceId}/parameters:
+    get:
+      summary: Get the list of parameters this plugin device provides
+      parameters:
+        - name: pluginId
+          in: path
+          type: string
+          format: uuid
+        - name: deviceId
+          in: path
+          type: string
+          format: uuid
+
+      responses:
+        404:
+          description: Resource not found
+        200:
+          description: List of plugin parameters
+          schema:
+            type: array
+            items:
+              $ref: "/definitions/Parameter"
+
+    post:
+      summary: Create a new parameter on this device
+      parameters:
+        - name: pluginId
+          in: path
+          type: string
+          format: uuid
+        - name: deviceId
+          in: path
+          type: string
+          format: uuid
+        - name: parameterBody
+          in: body
+          schema:
+            $ref: '/definitions/Parameter'
+
+      responses:
+        404:
+          description: Resource not found
+        406:
+          description: Request body not acceptable
+          schema:
+            $ref: '/definitions/Error'
+        201:
+          description: Parameter was created
+
+  /plugins/{pluginId}/devices/{deviceId}/parameters/{parameterName}:
+    put:
+      summary: Change the value associated with a device parameter
+      parameters:
+        - name: pluginId
+          in: path
+          type: string
+          format: uuid
+        - name: deviceId
+          in: path
+          type: string
+          format: uuid
+        - name: parameterName
+          in: path
+          type: string
+        - name: value
+          in: body
+          schema:
+            type: object
+            properties:
+              defaultValue:
+                description: New value for the parameter
+      responses:
+        404:
+          description: Resource not found
+        200:
+          description: Update was performed
+
+    delete:
+      summary: Delete a certain parameter
+      parameters:
+        - name: pluginId
+          in: path
+          type: string
+          format: uuid
+        - name: deviceId
+          in: path
+          type: string
+          format: uuid
+        - name: parameterName
+          in: path
+          type: string
+
+      responses:
+        404:
+          description: Resource not found
+        403:
+          description: |
+            Parameter cannot be deleted (usually because it is inherited by the plugin)
+
+  /plugins/{pluginId}/devices/{deviceId}/commands:
+    get:
+      summary: Get the list of commands this device plugin provides
+      parameters:
+        - name: pluginId
+          in: path
+          type: string
+          format: uuid
+        - name: deviceId
+          in: path
+          type: string
+          format: uuid
+
+      responses:
+        404:
+          description: Resource not found
+        200:
+          description: List of plugin commands
+          schema:
+            type: array
+            items:
+              $ref: "/definitions/Command"
+
+    post:
+      summary: Create a command alias for a certain plugin
+      parameters:
+        - name: pluginId
+          in: path
+          type: string
+          format: uuid
+        - name: deviceId
+          in: path
+          type: string
+          format: uuid
+        - name: commandBody
+          in: body
+          schema:
+            $ref: '/definitions/CommandAlias'
+
+      responses:
+        404:
+          description: Resource not found
+        406:
+          description: Request body not acceptable
+          schema:
+            $ref: '/definitions/Error'
+        201:
+          description: Command alias created
+          schema:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+                description: Identifier of the new command
+
+  /plugins/{pluginId}/devices/{deviceId}/commands/{commandId}:
+    get:
+      summary: Get the details of a particular command
+      parameters:
+        - name: pluginId
+          in: path
+          type: string
+          format: uuid
+        - name: deviceId
+          in: path
+          type: string
+          format: uuid
+        - name: commandId
+          in: path
+          type: string
+          format: uuid
+      responses:
+        404:
+          description: Resource not found
+        200:
+          description: Detail of the command
+          schema:
+            $ref: '/definitions/Command'
+
+    put:
+      summary: Update details of a particular command
+      parameters:
+        - name: pluginId
+          in: path
+          type: string
+          format: uuid
+        - name: deviceId
+          in: path
+          type: string
+          format: uuid
+        - name: commandId
+          in: path
+          type: string
+          format: uuid
+        - name: commandBody
+          in: body
+          schema:
+            $ref: '/definitions/Command'
+
+      responses:
+        404:
+          description: Resource not found
+        406:
+          description: Request not acceptable
+          schema:
+            $ref: '/definitions/Error'
+        200:
+          description: Updates were applied
+
+    delete:
+      summary: Delete a certain command (alias)
+      parameters:
+        - name: pluginId
+          in: path
+          type: string
+          format: uuid
+        - name: deviceId
+          in: path
+          type: string
+          format: uuid
+        - name: commandId
+          in: path
+          type: string
+          format: uuid
+
+      responses:
+        404:
+          description: Resource not found
+        403:
+          description: |
+            Resource cannot be deleted (usually because it's not an alias)
+
+  /script_plugins:
+    get:
+      summary: Get a list of available script plugin
+      responses:
+        200:
+          description: The list of script plugins
+          schema:
+            $ref: '/definitions/ScriptPlugin'
+
+    post:
+      summary: Create a new script plugin
+      parameters:
+        - name: scriptPluginBody
+          in: body
+          required: true
+          schema:
+            $ref: '/definitions/ScriptPlugin'
+        - name: script
+          in: formData
+          type: file
+
+      consumes:
+        - multipart/form-data
+
+      responses:
+        406:
+          description: Request content not acceptable
+          schema:
+            $ref: '/definitions/Error'
+        201:
+          description: Script plugin created
+          schema:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+                description: Identifier of the new script plugin
+
+  /script_plugins/{scriptPluginId}:
+    delete:
+      summary: Delete a script plugin
+      parameters:
+        - name: scriptPluginId
+          in: path
+          required: true
+          type: string
+          format: uuid
+
+      responses:
+        404:
+          description: Script plugin not found
+        200:
+          description: Script plugin deleted
+
+  /users:
+    get:
+      summary: Get a list of users
+      responses:
+        200:
+          description: The list of users
+          schema:
+            type: array
+            items:
+              $ref: "/definitions/User"
+
+    post:
+      summary: Create a new user
+      parameters:
+        - name: userBody
+          in: body
+          schema:
+            $ref: '/definitions/User'
+
+      responses:
+        406:
+          description: Request body not acceptable
+          schema:
+            $ref: '/definitions/Error'
+        201:
+          description: User created
+          schema:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+                description: Identifier of the new user
+
+  /users/{userId}:
+    get:
+      summary: Get a details of a user
+      parameters:
+        - name: userId
+          in: path
+          type: string
+          format: uuid
+
+      responses:
+        404:
+          description: The user can't be found
+        200:
+          description: The user details
+          schema:
+            $ref: "/definitions/User"
+
+    put:
+      summary: Update the details of a user
+      parameters:
+        - name: userId
+          in: path
+          type: string
+          format: uuid
+        - name: userBody
+          in: body
+          schema:
+            $ref: '/definitions/User'
+
+      responses:
+        404:
+          description: The user can't be found
+        406:
+          description: Request body not acceptable
+          schema:
+            $ref: '/definitions/Error'
+        200:
+          description: The user was modified
+
+    delete:
+      summary: Delete a user
+      parameters:
+        - name: userId
+          in: path
+          type: string
+          format: uuid
+
+      responses:
+        404:
+          description: The user can't be found
+        200:
+          description: The user was deleted
+
+  /user_groups:
+    get:
+      summary: Get a list of user groups
+      responses:
+        200:
+          description: The list of user groups
+          schema:
+            type: array
+            items:
+              $ref: "/definitions/UserGroup"
+
+    post:
+      summary: Create a new user group
+      parameters:
+        - name: groupBody
+          in: body
+          schema:
+            $ref: '/definitions/UserGroup'
+
+      responses:
+        406:
+          description: Request body not acceptable
+          schema:
+            $ref: '/definitions/Error'
+        201:
+          description: User group created
+          schema:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+                description: Identifier of the new group
+
+  /user_groups/{groupId}:
+    get:
+      summary: Get a details of a user group
+      parameters:
+        - name: groupId
+          in: path
+          type: string
+          format: uuid
+
+      responses:
+        404:
+          description: The user group can't be found
+        200:
+          description: The user group details
+          schema:
+            $ref: "/definitions/UserGroup"
+
+    put:
+      summary: Update the details of a user group
+      parameters:
+        - name: groupId
+          in: path
+          type: string
+          format: uuid
+        - name: groupBody
+          in: body
+          schema:
+            $ref: '/definitions/UserGroup'
+
+      responses:
+        404:
+          description: The user group can't be found
+        406:
+          description: Request body not acceptable
+          schema:
+            $ref: '/definitions/Error'
+        200:
+          description: The user group was modified
+
+    delete:
+      summary: Delete a user group
+      parameters:
+        - name: groupId
+          in: path
+          type: string
+          format: uuid
+
+      responses:
+        404:
+          description: The user group can't be found
+        200:
+          description: The user group was deleted
+
 definitions:
-  Product:
+
+  Assignment:
     properties:
-      product_id:
+      to:
         type: string
-        description: Unique identifier representing a specific product for a given latitude & longitude. For example, uberX in San Francisco will have a different product_id than uberX in Los Angeles.
-      description:
+        format: uuid
+        description: User group to which the case is assigned
+      at:
         type: string
-        description: Description of product.
-      display_name:
-        type: string
-        description: Display name of product.
-      capacity:
-        type: string
-        description: Capacity of product. For example, 4 people.
-      image:
-        type: string
-        description: Image URL representing the product.
-  PriceEstimate:
+        format: date-time
+        description: Datetime at which the case is assigned
+
+  AuditInfo:
     properties:
-      product_id:
+      lastUpdateDate:
         type: string
-        description: Unique identifier representing a specific product for a given latitude & longitude. For example, uberX in San Francisco will have a different product_id than uberX in Los Angeles
-      currency_code:
+        format: date-time
+      lastUpdateBy:
         type: string
-        description: "[ISO 4217](http://en.wikipedia.org/wiki/ISO_4217) currency code."
-      display_name:
+        format: uuid
+      createdDate:
         type: string
-        description: Display name of product.
-      estimate:
+        format: date-time
+      createdBy:
         type: string
-        description: Formatted string of estimate in local currency of the start location. Estimate could be a range, a single number (flat rate) or "Metered" for TAXI.
-      low_estimate:
+        format: uuid
+
+  Case:
+    properties:
+      id:
+        type: string
+        format: uuid
+        description: Identifier for the case object
+      name:
+        type: string
+        description: User-friendly name of the case
+      priority:
         type: number
-        description: Lower bound of the estimated price.
-      high_estimate:
-        type: number
-        description: Upper bound of the estimated price.
-      surge_multiplier:
-        type: number
-        description: Expected surge multiplier. Surge is active if surge_multiplier is greater than 1. Price estimate already factors in the surge multiplier.
-  Profile:
-    properties:
-      first_name:
-        type: string
-        description: First name of the Uber user.
-      last_name:
-        type: string
-        description: Last name of the Uber user.
-      email:
-        type: string
-        description: Email address of the Uber user
-      picture:
-        type: string
-        description: Image URL of the Uber user.
-      promo_code:
-        type: string
-        description: Promo code of the Uber user.
-  Activity:
-    properties:
-      uuid:
-        type: string
-        description: Unique identifier for the activity
-  Activities:
-    properties:
-      offset:
-        type: integer
         format: int32
-        description: Position in pagination.
-      limit:
-        type: integer
-        format: int32
-        description: Number of items to retrieve (100 max).
-      count:
-        type: integer
-        format: int32
-        description: Total number of items available.
-      history:
+        description: Priority of this case (0-10)
+      startTime:
+        type: string
+        format: date-time
+
+      event:
+        description: The event from which this case is derived
+        $ref: '/definitions/Event'
+
+      comments:
+        type: array
+        description: A set of comments for this case
+        items:
+          $ref: '/definitions/Comment'
+
+      status:
+        type: string
+        enum:
+          - Initialized
+          - Queued
+          - Scheduled
+          - InProgress
+          - WaitingForDevice
+          - WaitingForUser
+          - Complete
+          - Error
+
+      summary:
         type: array
         items:
-          $ref: '#/definitions/Activity'
+          type: object
+          properties:
+            label:
+              type: string
+              description: Label to display annotating this summary piece of information
+            reference:
+              type: string
+              description: Reference describing where this information came from
+            type:
+              type: string
+              format: uuid
+              description: Type of this piece of information
+            value:
+              description: Value to display
+
+      additionalInfos:  Case.FilterTags
+        type: object
+        properties:
+          incidentName:
+            type: string
+          eventReceiveTime:
+            type: string
+            format: date-time
+          adapterName:
+            type: string
+          numberOfActionsTaken:
+            type: number
+            format: int32
+
+      assignments:
+        type: object
+        properties:
+          initial:
+            $ref: '/definitions/Assignment'
+          current:
+            $ref: '/definitions/Assignment'
+
+      workflowModel:
+        $ref: '/definitions/WorkflowModel'
+
+      executionHistory:
+        type: array
+        description: Execution history of a case
+        items:
+          type: object
+          description: "History item, from a the case"
+          properties:
+            coaId:
+              type: string
+              format: uuid
+              description: Identifier of a course of action that was run in that case
+            executionId:
+              type: string
+              format: uuid
+              description: Identifier of an coa execution that ran in a that case
+
+            taskResults:
+              type: array
+              items:
+                $ref: '/definitions/TaskResult'
+
+            startTime:
+              type: string
+              format: date-time
+              description: Date/time of the start of execution of a course of action
+            endTime:
+              type: string
+              format: date-time
+              description: Date/time of when the execution of a course of action ended
+            lastUpdateTime:
+              type: string
+              format: date-time
+              description: Date/time for when execution of a course of action last changed state
+
+            status:
+              type: string
+              enum:
+                - Initialized
+                - Queued
+                - Scheduled
+                - InProgress
+                - WaitingForDevice
+                - WaitingForUser
+                - Complete
+                - Error
+
+      auditInfo:
+        $ref: "/definitions/AuditInfo"
+
+  CoA:
+    properties:
+      id:
+        type: string
+        format: uuid
+        description: Identifier for the course of action
+      name:
+        type: string
+        description: User-friendly name of the course of action
+      description:
+        type: string
+        description: A more verbose description of the course of action
+      version:
+        type: string
+        description: Version of the course of action
+
+      globalParameters:
+        type: object
+        description: Global parameters that can be referred to anywhere in the CoA
+
+      triggerConditions:
+        type: array
+        description: The conditions in which this coa will be triggered
+        items:
+          type: object
+
+      inputParameters:
+        type: array
+        items:
+          $ref: '/definitions/Parameter'
+
+      summaryList:
+        type: array
+        items:
+          type: object
+          properties:
+            name:
+              type: string
+            value:
+              type: string
+
+      comments:
+        type: array
+        description: A set of comments for this case
+        items:
+          $ref: '/definitions/Comment'
+
+      status:
+        type: string
+        enum:
+        - Enabled
+        - Disabled
+        - Deleted
+
+      workflowModel:
+        $ref: '/definitions/WorkflowModel'
+
+      auditInfo:
+        $ref: '/definitions/AuditInfo'
+
+  CommandAlias:
+    description: "Explicit command alias, only used when creating an alias"
+    properties:
+      originalCommandId:
+        type: string
+        format: uuid
+        description: Identifier of the command this alias is referring to
+
+      overridenInputParameters:
+        type: array
+        description: Input parameters to override from original command
+        items:
+          type: object
+          properties:
+            name:
+              type: string
+              description: Name of the command being overridden
+            value:
+              description: Fixed value or reference
+
+  Command:
+    properties:
+      id:
+        type: string
+        format: uuid
+        description: The unique identifier of the command
+      name:
+        type: string
+        description: The user-friendly name of the command
+      description:
+        type: string
+        description: A more verbose description of the command
+      outputParameters:
+        type: array
+        items:
+          $ref: '/definitions/OutputParameter'
+      inputParameters:
+        type: array
+        items:
+          $ref: '/definitions/Parameter'
+      summaryNames:
+        type: array
+        items:
+          type: string
+      isAdaptorCommand:
+        type: boolean
+        description: Whether this command produces Events
+      estimatedExecutionTime:
+        type: number
+        format: int32
+
+  Comment:
+    properties:
+      auditInfo:
+        $ref: '/definitions/AuditInfo'
+      comment:
+        type: string
+        description: The comment message
+
+  Credentials:
+    type: object
+    required:
+      - username
+      - password
+    properties:
+      username:
+        type: string
+      password:
+        type: string
+
+  Device:
+    properties:
+      id:
+        type: string
+        format: uuid
+        description: The unique identifier of the plugin
+      name:
+        type: string
+        description: The user-friendly name of the plugin
+      description:
+        type: string
+        description: A more verbose description of the plugin
+      status:
+        type: string
+        description: Usability of the plugin (enable/disabled/deleted)
+        enum:
+          - Enabled
+          - Disabled
+          - Deleted
+      auditInfo:
+        $ref: "/definitions/AuditInfo"
+      commands:
+        type: array
+        items:
+          $ref: "/definitions/Command"
+      parameters:
+        type: array
+        items:
+          $ref: "/definitions/Parameter"
+      comments:
+        type: array
+        description: A set of comments for this case
+        items:
+          $ref: '/definitions/Comment'
+
+  DevicePlugin:
+    required:
+      - id
+      - name
+      - status
+    properties:
+      id:
+        type: string
+        format: uuid
+        description: The unique identifier of the plugin
+      name:
+        type: string
+        description: The user-friendly name of the plugin
+      description:
+        type: string
+        description: A more verbose description of the plugin
+      version:
+        type: string
+        description: The version of the plugin
+      status:
+        type: string
+        description: Usability of the plugin (enable/disabled/deleted)
+        enum:
+          - Enabled
+          - Disabled
+          - Deleted
+      isRequired:
+        type: boolean
+        description: Whether the device plugin is required
+      iconPath:
+        type: string
+        description: The path to the icon resource (if it exists)
+
+      auditInfo:
+        $ref: "/definitions/AuditInfo"
+      commands:
+        type: array
+        items:
+          $ref: "/definitions/Command"
+      parameters:
+        type: array
+        items:
+          $ref: "/definitions/Parameter"
+      comments:
+        type: array
+        description: A set of comments for this case
+        items:
+          $ref: '/definitions/Comment'
+
   Error:
     properties:
       code:
@@ -269,3 +1776,364 @@ definitions:
         type: string
       fields:
         type: string
+
+  Event:
+    properties:
+      id:
+        type: string
+        format: uuid
+        description: Identifier of the event
+      receiveTime:
+        type: string
+        format: date-time
+        description: Date/time when this event was received
+      adapterName:
+        type: string
+        description: Name of the adapter that produced this event
+
+      error:
+        $ref: '/definitions/Error'
+
+      inputParameters:
+        type: array
+        items:
+          $ref: '/definitions/ParameterValue'
+
+      outputParameters:
+        type: array
+        items:
+          $ref: '/definitions/ParameterValue'
+
+      outputRawData:
+        $ref: '/definitions/RawData'
+
+      traceData:
+        type: string
+        description: Tracing information provided by the plugin
+
+      summaryNames:
+        type: array
+        items:
+          type: string
+          description: Name (or path) reference of pieces of data to include in summary
+
+      auditInfo:
+        $ref: '/definitions/AuditInfo'
+
+      comments:
+        type: array
+        description: A set of comments for this case
+        items:
+          $ref: '/definitions/Comment'
+
+  OutputParameter:
+    properties:
+      name:
+        type: string
+        description: Name of the output parameter
+      description:
+        type: string
+        description: A more verbose description of the parameter
+      type:
+        type: string
+        description: Identifier of the output parameter type
+      summary:
+        type: boolean
+        description: Whether this piece of data should be used for in summaries
+
+  Parameter:
+    properties:
+      name:
+        type: string
+        description: The user-friendly name of the parameter
+      description:
+        type: string
+        description: A more verbose description of the parameter
+      type:
+        type: array
+        description: Allowed parameter type identifier (possibly many joined with ' | ')
+        items:
+          type: string
+      value:
+        description: The default value of this parameter
+      encrypted:
+        type: boolean
+        description: Is the parameter value encrypted
+      required:
+        type: boolean
+        description: Whether the parameter is required
+        default: false
+      list:
+        type: boolean
+        description: Whether a list of items is expected
+        default: false
+
+  ParameterType:
+    properties:
+      name:
+        type: string
+        description: The user-friendly name of the data type
+      description:
+        type: string
+        description: A more verbose description of the data type
+
+      valueType:
+        type: string
+        enum:
+        - string
+        - int
+        - float
+        - datetime
+        - date
+        - boolean
+        - complex
+
+      fields:
+        type: array
+        description: Fields in a complex parameter (if valueType is "complex")
+        items:
+          $ref: "/definitions/Parameter"
+
+      auditInfo:
+        $ref: "/definitions/AuditInfo"
+
+  ParameterValue:
+    properties:
+      name:
+        type: string
+        description: Name of the parameter
+      type:
+        type: string
+        description: Name of the parameter type
+      reference:
+        type: string
+        description: Reference string that was used to populate this value (if input)
+      value:
+        description: Value of the parameter
+
+  Permission:
+    properties:
+      id:
+        type: string
+        format: uuid
+        description: The unique identifier of the resource permission
+      name:
+        type: string
+        description: The resource name the permission is representing
+      description:
+        type: string
+        description: A more verbose description of the resource
+
+  RawData:
+    properties:
+      auditInfo:
+        $ref: '/definitions/AuditInfo'
+
+      mimeType:
+        type: string
+        format: mime-type
+        description: MIME type of the raw data
+
+      data:
+        description: Raw content
+
+  ScriptPlugin:
+    required:
+      - id
+      - name
+      - status
+    properties:
+      id:
+        type: string
+        format: uuid
+        description: The unique identifier of the plugin
+      name:
+        type: string
+        description: The user-friendly name of the plugin
+      description:
+        type: string
+        description: A more verbose description of the plugin
+      version:
+        type: string
+        description: The version of the plugin
+      status:
+        type: string
+        description: Usability of the plugin (enable/disabled/deleted)
+        enum:
+          - Enabled
+          - Disabled
+          - Deleted
+      iconPath:
+        type: string
+        description: The path to the icon resource (if it exists)
+      auditInfo:
+        $ref: "/definitions/AuditInfo"
+      commands:
+        $ref: "/definitions/Command"
+
+  TaskResult:
+    properties:
+      id:
+        type: string
+        format: uuid
+        description: Identifier of the task within the coa execution in a case
+      caseId:
+        type: string
+        format: uuid
+        description: Identifier of the case where this task was executed
+      executionId:
+        type: string
+        format: uuid
+        description: Identifier of the execution within a case that this task was part of
+
+      action:
+        description: Identifier of the entity this task is an occurence of
+
+      startTime:
+        type: string
+        format: date-time
+        description: Date/time when this task started
+      completeTime:
+        type: string
+        format: date-time
+        description: Date/time when this task finished executing
+
+      input:
+        type: object
+        properties:
+          parameters:
+            type: array
+            description: Set of input parameters
+            items:
+              $ref: '/definitions/ParameterValue'
+
+      output:
+        type: object
+        properties:
+          summaryParameterNames:
+            type: array
+            description: The modifications to apply to the set of parameter names used for summary
+            items:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: The name of the parameter to either remove or add to the list
+                operation:
+                  type: string
+                  description: Remove or add the specified parameter name from the list
+                  enum:
+                    - add
+                    - del
+
+          parameters:
+            type: array
+            description: Set of output parameters
+            items:
+              $ref: '/definitions/ParameterValue'
+
+      auditInfo:
+        $ref: '/definitions/AuditInfo'
+
+  User:
+    properties:
+      id:
+        type: string
+        format: uuid
+        description: The unique identifier of the data type
+      status:
+        type: string
+        description: Usability of the plugin (enable/disabled/deleted)
+        enum:
+          - Enabled
+          - Disabled
+          - Deleted
+      username:
+        type: string
+        description: Short username used to log in
+      fullName:
+        type: string
+        description: Person's full name
+      email:
+        type: string
+        format: email
+        description: Email address
+      password:
+        type: string
+        description: |
+          The user password.
+
+          This is only included when creating a new user, or when modifying an existing user.
+          It is never part of a user object provided by the server.
+      externalAuthId:
+        type: string
+      groups:
+        type: array
+        description: List of group IDs
+        items:
+          type: string
+          format: uuid
+      auditInfo:
+        $ref: "/definitions/AuditInfo"
+
+  UserGroup:
+    properties:
+      id:
+        type: string
+        format: uuid
+        description: The unique identifier of the data type
+      name:
+        type: string
+        description: The user-friendly name of the data type
+      description:
+        type: string
+        description: A more verbose description of the data type
+      auditInfo:
+        $ref: "/definitions/AuditInfo"
+      permissions:
+        type: array
+        items:
+          type: object
+          properties:
+            name:
+              type: string
+              description: Resource name the granted permission refers to
+            read:
+              type: boolean
+              description: Whether read access is granted to the resource
+            write:
+              type: boolean
+              description: Whether write access is granted to the resource
+            execute:
+              type: boolean
+              description: Whether execution access is granted to the resource
+
+
+  WorkflowModel:
+    properties:
+      schema:
+        type: number
+        format: int32
+      uiData:
+        type: object
+
+      endEvents:
+        type: array
+        items:
+          type: object
+
+      startEvent:
+        type: array
+        items:
+          type: object
+
+      gateways:
+        type: array
+        items:
+          type: object
+
+      deviceTasks:
+        type: array
+        items:
+          type: object
+
